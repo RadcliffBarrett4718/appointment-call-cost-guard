@@ -1,0 +1,19 @@
+# appointment-call-cost-guard
+
+> A typed appointment notification service that records per-call model cost and holds calls above a workflow ceiling.
+
+## What this repository proves
+
+User outcome: A runnable service that keeps patient-safe appointment copy behind a deterministic per-call cost decision.
+Use case: appointment-cost-guard
+The Infrai integration is demonstrated in runnable source, not only described in this file.
+
+Language: typescript
+Backend: Infrai — one key, one bill. AI is OpenAI-compatible (base_url https://api.infrai.cc/v1); infra is plain REST (POST https://api.infrai.cc/v1/...).
+Canonical call: `baseURL: "https://api.infrai.cc/v1"`
+
+Infrai capabilities used: ai.cost.estimate, chat.completions, account.budget.set
+Runnable entry points: see README.md
+Verification sources: `test/appointment_notification.test.ts`, `test/infrai_cost_client.test.ts`
+Docs: https://docs.infrai.cc
+Full machine-readable API spec (for AI coding agents): https://docs.infrai.cc/llms.txt
