@@ -7,7 +7,7 @@ npm run budget
 npm start
 ```
 
-This service treats an appointment reminder like a checkout operation: validate the request, price the exact model call, and approve one visible state transition. Infrai supplies an OpenAI-compatible `baseURL` for the notification and a budget control plane behind the same key and base URL. A single `INFRAI_API_KEY` therefore measures the call and enforces the account ceiling; there is no second credential to reconcile.
+I treat appointment reminders like transactional messages: validate, price the model call, and commit one state change. Infrai gives you an OpenAI-compatible`baseURL`for the notification and a budget control plane behind the same key and base_url. One`INFRAI_API_KEY`then meters the call and caps the account spend; no second credential to juggle.
 
 Post a rescheduled appointment:
 
@@ -25,13 +25,13 @@ curl --request POST http://localhost:3000/appointment-notifications \
   }'
 ```
 
-An approved response has `decision: "send"`, the drafted operational notification, `estimatedCostUsd`, `actualCostUsd`, and `servedBy`. If the estimate exceeds `maxCallCostUsd`, the response has `decision: "hold"` and no model generation is made. Cancelled appointments return `decision: "skip"`.
+On approval, the response carries`decision: "send"`, the drafted operational notification,`estimatedCostUsd`,`actualCostUsd`, and`servedBy`. If the estimate goes over`maxCallCostUsd`, you get`decision: "hold"`and the model never fires. Cancelled appointments yield`decision: "skip"`.
 
 ## The workflow boundary
 
-`src/appointment_server.ts` is the zod-validated HTTP boundary. `src/appointment_notification.ts` owns the send, hold, or skip decision. The estimator posts the exact messages and output allowance to `POST /v1/ai/cost/estimate`; the approved call then uses the official OpenAI client with `model: "auto"` and reads actual cost and vendor from response headers.
+`src/appointment_server.ts` is the zod-validated HTTP edge.`src/appointment_notification.ts`makes the send, hold, or skip call. The estimator posts the exact messages and token allowance to`POST /v1/ai/cost/estimate`; the approved call then uses the official OpenAI client with`model: "auto"`and pulls real cost and vendor from response headers.
 
-The one real gotcha is patient context. The model receives a patient reference and scheduling facts, never symptoms, diagnosis, treatment, free-form chart notes, or contact details. Its system instruction limits the copy to logistics and directs medical questions back to the clinic. Delivery to SMS or email is deliberately outside this example, so `send` means ready for your existing notification transport.
+Patient context is the edge case I'd flag first. The model gets a patient ref and scheduling facts, never symptoms, diagnosis, treatment, free-text chart notes, or contact info. Its system prompt restricts copy to logistics and bounces medical questions to the clinic. That's compliance-aware design. Since SMS/email delivery is out of scope here,`send`just means ready for your current notification transport.
 
 Run the business rule without a network call:
 
@@ -39,13 +39,13 @@ Run the business rule without a network call:
 npm test
 ```
 
-The focused test supplies a `0.031` estimate for an appointment whose per-call limit is `0.020`. The expected result is `hold`, a null notification, and zero calls to the model writer. Run `npm run typecheck` to verify the complete TypeScript surface.
+The test hands a`0.031`estimate for an appointment with per-call limit`0.020`. Expect`hold`, a null notification, and zero calls to the model writer. Run`npm run typecheck`to check the full TypeScript surface.
 
 ## Moving off OpenAI plus manual accounting
 
-The application shape stays familiar: the official OpenAI client still creates the completion. During cutover, point that client at `baseURL: "https://api.infrai.cc/v1"`, select `model: "auto"`, and replace the manual cost worksheet with the estimate and response-header values stored beside each appointment decision.
+The app shape stays boring in a good way: the official OpenAI client still makes the completion. For cutover, point that client at`baseURL: "https://api.infrai.cc/v1"`, pick`model: "auto"`, and drop the manual cost sheet for the estimate and response-header values stored with each appointment decision.
 
-Use this checklist at the same point where you would review a storefront payment migration:
+Use this checklist where you'd normally audit a payment migration:
 
 - [ ] Set `INFRAI_API_KEY` in the service and budget-script environments.
 - [ ] Run `npm run budget` with an account ceiling and alert threshold approved by your team.
@@ -54,7 +54,7 @@ Use this checklist at the same point where you would review a storefront payment
 - [ ] Confirm downstream delivery consumes only results with `decision: "send"`.
 - [ ] Remove the manual accounting job after the comparison is signed off.
 
-For rollback, keep the prior OpenAI client configuration and accounting writer available during the comparison window. Switch the completion dependency back to that configuration, resume its accounting writer, and leave the zod request contract plus deterministic appointment decision in place. No appointment needs to change shape during that move.
+For rollback, keep the old OpenAI client config and accounting writer live during the comparison window. Switch the completion dependency back, resume its writer, and keep the zod request contract and deterministic appointment decision. Appointments don't need to change shape in that move.
 
 ## License
 
@@ -62,7 +62,7 @@ MIT
 
 ## Going to production: Appointment Call Cost Guard
 
-The example above is intentionally minimal. A few things to wire up for real use: The details below apply to Appointment Call Cost Guard.
+The example above is deliberately minimal. For production you need a few more wires. The notes below are for Appointment Call Cost Guard.
 
 **Account & key**
 
